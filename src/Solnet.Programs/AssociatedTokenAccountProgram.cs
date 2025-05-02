@@ -1,3 +1,4 @@
+using Solnet.Programs.Token2022;
 using Solnet.Rpc.Models;
 using Solnet.Rpc.Utilities;
 using Solnet.Wallet;
@@ -38,9 +39,23 @@ namespace Solnet.Programs
         /// <param name="owner">The public key of the owner account for the new associated token account.</param>
         /// <param name="mint">The public key of the mint for the new associated token account.</param>
         /// <returns>The transaction instruction, returns null whenever an associated token address could not be derived..</returns>
-        public static TransactionInstruction CreateAssociatedTokenAccount(PublicKey payer, PublicKey owner, PublicKey mint)
+        public static TransactionInstruction CreateAssociatedTokenAccount(PublicKey payer, PublicKey owner, PublicKey mint) =>
+            CreateAssociatedTokenAccount(payer, owner, mint, TokenProgram.ProgramIdKey);
+        
+        /// <summary>
+        /// Initialize a new transaction which interacts with the Associated Token Account Program to create
+        /// a new associated token account on Token 2022 program.
+        /// </summary>
+        /// <param name="payer">The public key of the account used to fund the associated token account.</param>
+        /// <param name="owner">The public key of the owner account for the new associated token account.</param>
+        /// <param name="mint">The public key of the mint for the new associated token account.</param>
+        /// <returns>The transaction instruction, returns null whenever an associated token address could not be derived..</returns>
+        public static TransactionInstruction CreateAssociatedTokenAccount2022(PublicKey payer, PublicKey owner, PublicKey mint) =>
+            CreateAssociatedTokenAccount(payer, owner, mint, Token2022Program.ProgramIdKey);
+        
+        private static TransactionInstruction CreateAssociatedTokenAccount(PublicKey payer, PublicKey owner, PublicKey mint, PublicKey tokenProgramId)
         {
-            PublicKey associatedTokenAddress = DeriveAssociatedTokenAccount(owner, mint);
+            PublicKey associatedTokenAddress = DeriveAssociatedTokenAccount(owner, mint, tokenProgramId);
 
             if (associatedTokenAddress == null) return null;
 
@@ -51,7 +66,7 @@ namespace Solnet.Programs
                 AccountMeta.ReadOnly(owner, false),
                 AccountMeta.ReadOnly(mint, false),
                 AccountMeta.ReadOnly(SystemProgram.ProgramIdKey, false),
-                AccountMeta.ReadOnly(TokenProgram.ProgramIdKey, false),
+                AccountMeta.ReadOnly(tokenProgramId, false),
                 AccountMeta.ReadOnly(SysVars.RentKey, false)
             };
 
@@ -69,10 +84,22 @@ namespace Solnet.Programs
         /// <param name="owner">The public key of the owner account for the new associated token account.</param>
         /// <param name="mint">The public key of the mint for the new associated token account.</param>
         /// <returns>The public key of the associated token account if it could be found, otherwise null.</returns>
-        public static PublicKey DeriveAssociatedTokenAccount(PublicKey owner, PublicKey mint)
+        public static PublicKey DeriveAssociatedTokenAccount(PublicKey owner, PublicKey mint) =>
+            DeriveAssociatedTokenAccount(owner, mint, TokenProgram.ProgramIdKey);
+        
+        /// <summary>
+        /// Derive the public key of the associated token account for the
+        /// </summary>
+        /// <param name="owner">The public key of the owner account for the new associated token account.</param>
+        /// <param name="mint">The public key of the mint for the new associated token account.</param>
+        /// <returns>The public key of the associated token account if it could be found, otherwise null.</returns>
+        public static PublicKey DeriveAssociatedTokenAccount2022(PublicKey owner, PublicKey mint) =>
+            DeriveAssociatedTokenAccount(owner, mint, Token2022Program.ProgramIdKey);
+        
+        private static PublicKey DeriveAssociatedTokenAccount(PublicKey owner, PublicKey mint, PublicKey tokenProgramId)
         {
             bool success = PublicKey.TryFindProgramAddress(
-                new List<byte[]> { owner.KeyBytes, TokenProgram.ProgramIdKey.KeyBytes, mint.KeyBytes },
+                new List<byte[]> { owner.KeyBytes, tokenProgramId.KeyBytes, mint.KeyBytes },
                 ProgramIdKey, out PublicKey derivedAssociatedTokenAddress, out _);
             return derivedAssociatedTokenAddress;
         }
