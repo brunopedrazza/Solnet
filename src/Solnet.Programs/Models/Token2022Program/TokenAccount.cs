@@ -1,15 +1,11 @@
 ﻿using Solnet.Programs.Utilities;
 using Solnet.Wallet;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Solnet.Programs.Models.TokenProgram
+namespace Solnet.Programs.Models.Token2022Program
 {
     /// <summary>
-    /// Represents a <see cref="Programs.TokenProgram" /> token account.
+    /// Represents a <see cref="Programs.Token2022.Token2022Program" /> token account.
     /// </summary>
     public class TokenAccount
     {
