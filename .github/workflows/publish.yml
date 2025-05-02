@@ -3,18 +3,32 @@ name: Build, Pack & Publish
 on:
   push:
     branches:
-      - master # Default release branch
-      - net5 # .NET5 release branch
+      - master
+      - net5
+
 jobs:
   publish:
     name: build, pack & publish
     runs-on: ubuntu-latest
     steps:
+      - name: Setup .NET SDK 6.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Ensure .NET 6 Runtime is Installed
+        run: |
+          curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --runtime dotnet --version 6.0.29
+          echo "$HOME/.dotnet" >> $GITHUB_PATH
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
       - name: Get the sources
         uses: actions/checkout@v2
+
       - name: Extract release notes
         run: |
-            git log --pretty=format:'%s' ${GITHUB_REF} | perl -pe 's| \(.*tag: v(\d+.\d+.\d+(-preview\d{3})?)(, .*?)*\)|\n## \1\n|g' > RELEASE-NOTES.txt
+          git log --pretty=format:'%s' ${GITHUB_REF} | perl -pe 's| \(.*tag: v(\d+.\d+.\d+(-preview\d{3})?)(, .*?)*\)|\n## \1\n|g' > RELEASE-NOTES.txt
+
       - name: Run the build script
         uses: cake-build/cake-action@v1
         with:
@@ -22,6 +36,8 @@ jobs:
           target: Pack
           cake-version: 1.1.0
           cake-bootstrap: true
+
+      # Publish NuGet packages
       - name: Publish Solnett.Extensions on version change
         uses: brunopedrazza/publish-nuget@master
         with:
@@ -30,8 +46,9 @@ jobs:
           VERSION_FILE_PATH: SharedBuildProperties.props
           VERSION_REGEX: ^\s*<Version>(.*)<\/Version>\s*$
           TAG_FORMAT: v*
-          NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
           INCLUDE_SYMBOLS: true
+
       - name: Publish Solnett.Wallet on version change
         uses: brunopedrazza/publish-nuget@master
         with:
@@ -40,8 +57,9 @@ jobs:
           VERSION_FILE_PATH: SharedBuildProperties.props
           VERSION_REGEX: ^\s*<Version>(.*)<\/Version>\s*$
           TAG_FORMAT: v*
-          NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
           INCLUDE_SYMBOLS: true
+
       - name: Publish Solnett.Rpc on version change
         uses: brunopedrazza/publish-nuget@master
         with:
@@ -50,8 +68,9 @@ jobs:
           VERSION_FILE_PATH: SharedBuildProperties.props
           VERSION_REGEX: ^\s*<Version>(.*)<\/Version>\s*$
           TAG_FORMAT: v*
-          NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
           INCLUDE_SYMBOLS: true
+
       - name: Publish Solnett.KeyStore on version change
         uses: brunopedrazza/publish-nuget@master
         with:
@@ -60,8 +79,9 @@ jobs:
           VERSION_FILE_PATH: SharedBuildProperties.props
           VERSION_REGEX: ^\s*<Version>(.*)<\/Version>\s*$
           TAG_FORMAT: v*
-          NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
           INCLUDE_SYMBOLS: true
+
       - name: Publish Solnett.Programs on version change
         id: publish_nuget
         uses: brunopedrazza/publish-nuget@master
@@ -71,8 +91,9 @@ jobs:
           VERSION_FILE_PATH: SharedBuildProperties.props
           VERSION_REGEX: ^\s*<Version>(.*)<\/Version>\s*$
           TAG_FORMAT: v*
-          NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
           INCLUDE_SYMBOLS: true
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -82,6 +103,8 @@ jobs:
           body_path: RELEASE-NOTES.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Upload release assets
       - name: Upload Solnett.Extensions release assets
         uses: svenstaro/upload-release-action@v2
         with:
@@ -89,6 +112,7 @@ jobs:
           file: artifacts/Solnet.Extensions.dll
           tag: ${{ steps.publish_nuget.outputs.VERSION }}
           upload_url: ${{ steps.create_release.outputs.upload_url }}
+
       - name: Upload Solnett.Wallet release assets
         uses: svenstaro/upload-release-action@v2
         with:
@@ -96,6 +120,7 @@ jobs:
           file: artifacts/Solnet.Wallet.dll
           tag: ${{ steps.publish_nuget.outputs.VERSION }}
           upload_url: ${{ steps.create_release.outputs.upload_url }}
+
       - name: Upload Solnett.Rpc release assets
         uses: svenstaro/upload-release-action@v2
         with:
@@ -103,6 +128,7 @@ jobs:
           file: artifacts/Solnet.Rpc.dll
           tag: ${{ steps.publish_nuget.outputs.VERSION }}
           upload_url: ${{ steps.create_release.outputs.upload_url }}
+
       - name: Upload Solnett.KeyStore release assets
         uses: svenstaro/upload-release-action@v2
         with:
@@ -110,6 +136,7 @@ jobs:
           file: artifacts/Solnet.KeyStore.dll
           tag: ${{ steps.publish_nuget.outputs.VERSION }}
           upload_url: ${{ steps.create_release.outputs.upload_url }}
+
       - name: Upload Solnett.Programs release assets
         uses: svenstaro/upload-release-action@v2
         with:
